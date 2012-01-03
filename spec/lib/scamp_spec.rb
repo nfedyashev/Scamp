@@ -104,306 +104,190 @@ describe Scamp do
   end
   
   describe "matching" do
-    
-    context "with conditions" do
-      context "for room" do
+    before do
+      @room1 = Room.new(id: 123, name: 'Room 1')
+      RoomRepository.add_room(@room1)
 
+      @user1 = User.new(id: 123, name: 'User 1')
+      UserRepository.add_user(@user1)
+    end
+
+    context "with conditions" do
+
+      context "for room" do
         it "should limit matches by id" do
-          canary = mock
-          canary.expects(:lives).once
-          canary.expects(:bang).never
-          
-          bot = a Scamp
-          bot.behaviour do
-            match("a string", :conditions => {:room => 123}) {canary.lives}
-            match("a string", :conditions => {:room => 456}) {canary.bang}
-          end
-          
-          bot.send(:process_message, {:room_id => 123, :body => "a string"})
+          room2 = Room.new(id: 456, name: 'Room 2')
+          RoomRepository.add_room(room2)
+
+          message = Scamp::Message.new({:room => @room1, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:room => 123})
+          matcher.matches?(message).should be_true
+
+          message = Scamp::Message.new({:room_id => room2, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:room => 123})
+          matcher.matches?(message).should be_false
         end
 
         it "should limit matches by array of IDs" do
-          canary = mock
-          canary.expects(:lives).once
-          canary.expects(:bang).never
-          
-          bot = a Scamp
-          bot.behaviour do
-            match("a string", :conditions => {:room => [123]}) {canary.lives}
-            match("a string", :conditions => {:room => [456]}) {canary.bang}
-          end
-          
-          bot.room_cache = @valid_room_cache_data
+          room2 = Room.new(id: 456, name: 'Room 2')
+          RoomRepository.add_room(room2)
 
-          bot.send(:process_message, {:room_id => 123, :body => "a string"})
+          message = Scamp::Message.new({:room => @room1, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:room => [123]})
+          matcher.matches?(message).should be_true
+
+
+          message = Scamp::Message.new({:room_id => room2, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:room => [123]})
+          matcher.matches?(message).should be_false
         end
 
         it "should limit matches by array in complex form" do
-          canary = mock
-          canary.expects(:lives).once
-          canary.expects(:bang).never
+          message = Scamp::Message.new({:room => @room1, :body => "a string"})
 
-          bot = a Scamp
-          bot.behaviour do
-           match("a string", :conditions => {:rooms => ["foo", 777]}) {canary.lives}
-           match("a string", :conditions => {:room => ["bar"]}) {canary.bang}
-          end
+          matcher = Scamp::Expectation.new("a string", :conditions => {:rooms => [@room1.name, 777]})
+          matcher.matches?(message).should be_true
 
-          bot.room_cache = @valid_room_cache_data
-          bot.send(:process_message, {:room_id => 123, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:rooms => ['bar']})
+          matcher.matches?(message).should be_false
         end
 
         it "should limit matches by name" do
-          canary = mock
-          canary.expects(:lives).once
-          canary.expects(:bang).never
-          
-          bot = a Scamp
-          bot.behaviour do
-            match("a string", :conditions => {:room => "foo"}) {canary.lives}
-            match("a string", :conditions => {:room => "bar"}) {canary.bang}
-          end
-          
-          bot.room_cache = @valid_room_cache_data
-          
-          bot.send(:process_message, {:room_id => 123, :body => "a string"})
+          message = Scamp::Message.new({:room => @room1, :body => "a string"})
+
+          matcher = Scamp::Expectation.new("a string", :conditions => {:room => @room1.name})
+          matcher.matches?(message).should be_true
+
+          matcher = Scamp::Expectation.new("a string", :conditions => {:room => 'bar'})
+          matcher.matches?(message).should be_false
         end
 
       end
-      
-      it "should limit matches by user id" do
-        canary = mock
-        canary.expects(:lives).once
-        canary.expects(:bang).never
-        
-        bot = a Scamp
-        bot.behaviour do
-          match("a string", :conditions => {:user => 123}) {canary.lives}
-          match("a string", :conditions => {:user => 456}) {canary.bang}
-        end
-        
-        bot.send(:process_message, {:user_id => 123, :body => "a string"})
-      end
-      
-      it "should limit matches by user name" do
-        canary = mock
-        canary.expects(:lives).once
-        canary.expects(:bang).never
-        
-        bot = a Scamp
-        bot.behaviour do
-          match("a string", :conditions => {:user => "foo"}) {canary.lives}
-          match("a string", :conditions => {:user => "bar"}) {canary.bang}
-        end
-        
-        bot.user_cache = @valid_user_cache_data
-        
-        bot.send(:process_message, {:user_id => 123, :body => "a string"})
-      end
-      
-      it "should limit matches by room and user" do
-        canary = mock
-        canary.expects(:lives).once
-        canary.expects(:bang).never
-        
-        bot = a Scamp
-        bot.behaviour do
-          match("a string", :conditions => {:room => 123, :user => 123}) {canary.lives}
-          match("a string", :conditions => {:room => 456, :user => 456}) {canary.bang}
-        end
-        
-        bot.room_cache = @valid_room_cache_data
-        bot.user_cache = @valid_user_cache_data
-        bot.send(:process_message, {:room_id => 123, :user_id => 123, :body => "a string"})
-        bot.send(:process_message, {:room_id => 123, :user_id => 456, :body => "a string"})
-        bot.send(:process_message, {:room_id => 456, :user_id => 123, :body => "a string"})
-      end
-      
-      it "should ignore itself if so requested" do
-        canary = mock
-        canary.expects(:bang).never
 
-        bot = a Scamp
-        bot.user_cache = @valid_user_cache_data
-        bot.ignore_self = true
-        bot.ignore_self.should be_true
-        bot.behaviour do
-          match("a string") {canary.bang}
+      context "for user" do
+        before do
+          @user1 = User.new(id: 123, name: 'User 1')
+          UserRepository.add_user(@user1)
         end
-        
-        bot.send(:process_message, {:user_id => 123, :body => "a string"})
+
+        it "should limit matches by user id" do
+          message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:user => @user1.id})
+          matcher.matches?(message).should be_true
+
+          matcher = Scamp::Expectation.new("a string", :conditions => {:user => 0})
+          matcher.matches?(message).should be_false
+        end
+
+        it "should limit matches by user name" do
+          message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:user => @user1.name})
+          matcher.matches?(message).should be_true
+
+          matcher = Scamp::Expectation.new("a string", :conditions => {:user => 'invalid'})
+          matcher.matches?(message).should be_false
+        end
+
+        it "should limit matches by room and user" do
+          message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :conditions => {:user => @user1.id, :room => @room1.id})
+          matcher.matches?(message).should be_true
+
+          matcher = Scamp::Expectation.new("a string", :conditions => {:user => @user1.id, :room => 456})
+          matcher.matches?(message).should be_false
+        end
+
+        it "should ignore itself if so requested" do
+          message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "a string"})
+          matcher = Scamp::Expectation.new("a string", :ignore_self => true, :conditions => {:user => @user1.name})
+          matcher.matches?(message).should be_true
+        end
       end
     end
     
     describe "strings" do
       it "should match an exact string" do
-        canary = mock
-        canary.expects(:lives).once
-        canary.expects(:bang).never
-        
-        bot = a Scamp
-        bot.behaviour do
-          match("a string") {canary.lives}
-          match("another string") {canary.bang}
-          match("a string like no other") {canary.bang}
-        end
-        
-        bot.send(:process_message, {:body => "a string"})
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "a string"})
+
+        matcher = Scamp::Expectation.new("a string", :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_true
+
+        matcher = Scamp::Expectation.new("another string", :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_false
+
+        matcher = Scamp::Expectation.new("a string like no another", :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_false
       end
       
       it "should not match without prefix when required_prefix is true" do
-        canary = mock
-        canary.expects(:bang).never
-        
-        bot = a Scamp, :required_prefix => 'Bot: '
-        bot.behaviour do
-          match("a string") {canary.bang}
-        end
-        
-        bot.send(:process_message, {:body => "a string"})
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "a string"})
+
+        matcher = Scamp::Expectation.new("a string", :required_prefix => 'Bot: ', :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_false
       end
 
       it "should match with exact prefix when required_prefix is true" do
-        canary = mock
-        canary.expects(:lives).once
-        
-        bot = a Scamp, :required_prefix => 'Bot: '
-        bot.behaviour do
-          match("a string") {canary.lives}
-        end
-        
-        bot.send(:process_message, {:body => "Bot: a string"})
+        raise 'fixme'
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "Bot: a string"})
+
+        matcher = Scamp::Expectation.new("a string", :required_prefix => 'Bot: ', :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_true
       end
     end
-    
 
     describe "regexes" do
       it "should match a regex" do
-        canary = mock
-        canary.expects(:ping).twice
-        
-        bot = a Scamp
-        bot.behaviour do
-          match /foo/ do
-            canary.ping
-          end
-        end
-        
-        bot.send(:process_message, {:body => "something foo other thing"})
-        bot.send(:process_message, {:body => "foomaster"})
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "something foo other thing"})
+        matcher = Scamp::Expectation.new(/foo/, :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_true
+
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "foomaster"})
+        matcher = Scamp::Expectation.new(/foo/, :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_true
       end
       
       it "should make named captures vailable as methods" do
-        canary = mock
-        canary.expects(:one).with("first")
-        canary.expects(:two).with("the rest of it")
-        
-        bot = a Scamp
-        bot.behaviour do
-          match /^please match (?<yousaidthis>\w+) and (?<andthis>.+)$/ do
-            canary.one(yousaidthis)
-            canary.two(andthis)
-          end
-        end
-        
-        bot.send(:process_message, {:body => "please match first and the rest of it"})
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "please match first and the rest of it"})
+        matcher = Scamp::Expectation.new(/^please match (?<yousaidthis>\w+) and (?<andthis>.+)$/, :conditions => {:user => @user1.name})
+
+        matcher.matches?(message).should be_true
+
+        matcher.matches['yousaidthis'].should == "first"
+        matcher.matches['andthis'].should == "the rest of it"
       end
       
       it "should make matches available in an array" do
-        canary = mock
-        canary.expects(:one).with("first")
-        canary.expects(:two).with("the rest of it")
-        
-        bot = a Scamp
-        bot.behaviour do
-          match /^please match (\w+) and (.+)$/ do
-            canary.one(matches[0])
-            canary.two(matches[1])
-          end
-        end
-        
-        bot.send(:process_message, {:body => "please match first and the rest of it"})
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "please match first and the rest of it"})
+        matcher = Scamp::Expectation.new(/^please match (\w+) and (.+)$/, :conditions => {:user => @user1.name})
+
+        matcher.matches?(message).should be_true
+        matcher.matches[1..-1].should == ["first", "the rest of it"]
       end
       
       it "should not match without prefix when required_prefix is present" do
-        canary = mock
-        canary.expects(:bang).never
-        
-        bot = a Scamp, :required_prefix => /^Bot[\:,\s]+/i
-        bot.behaviour do
-          match(/a string/) {canary.bang}
-        end
-        
-        bot.send(:process_message, {:body => "a string"})
-        bot.send(:process_message, {:body => "some kind of a string"})
-        bot.send(:process_message, {:body => "a string!!!"})
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "a string"})
+        matcher = Scamp::Expectation.new(/a string/, :required_prefix => /^Bot[\:,\s]+/i, :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_false
+
+
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "some kind of a string"})
+        matcher = Scamp::Expectation.new(/a string/, :required_prefix => /^Bot[\:,\s]+/i, :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_false
       end
 
       it "should match with regex prefix when required_prefix is present" do
-        canary = mock
-        canary.expects(:lives).times(4)
-        
-        bot = a Scamp, :required_prefix => /^Bot\W{1,2}/i
-        bot.behaviour do
-          match(/a string/) {canary.lives}
-        end
-        
-        bot.send(:process_message, {:body => "Bot, a string"})
-        bot.send(:process_message, {:body => "Bot a string"})
-        bot.send(:process_message, {:body => "bot: a string"})
-        bot.send(:process_message, {:body => "Bot: a string oh my!"})
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "Bot, a string"})
+        matcher = Scamp::Expectation.new(/a string/, :required_prefix => /^Bot\W{1,2}/i, :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_true
+
+        message = Scamp::Message.new({:room => @room1, :user => @user1, :body => "bot: a string"})
+        matcher = Scamp::Expectation.new(/a string/, :required_prefix => /^Bot\W{1,2}/i, :conditions => {:user => @user1.name})
+        matcher.matches?(message).should be_true
       end
     end
   end
   
   describe "match block" do
-    it "should make the room details available to the action block" do
-      canary = mock
-      canary.expects(:id).with(123)
-      canary.expects(:name).with(@valid_room_cache_data[123]["name"])
-      
-      bot = a Scamp
-      bot.behaviour do
-        match("a string") {
-          canary.id(room_id)
-          canary.name(room)
-        }
-      end
-      
-      bot.room_cache = @valid_room_cache_data
-      bot.send(:process_message, {:room_id => 123, :body => "a string"})
-    end
-    
-    it "should make the speaking user details available to the action block" do
-      canary = mock
-      canary.expects(:id).with(123)
-      canary.expects(:name).with(@valid_user_cache_data[123]["name"])
-      
-      bot = a Scamp
-      bot.behaviour do
-        match("a string") {
-          canary.id(user_id)
-          canary.name(user)
-        }
-      end
-      
-      bot.user_cache = @valid_user_cache_data
-      bot.send(:process_message, {:user_id => 123, :body => "a string"})
-    end
-    
-    it "should make the message said available to the action block" do
-      canary = mock
-      canary.expects(:message).with("Hello world")
-      
-      bot = a Scamp
-      bot.behaviour do
-        match("Hello world") {
-          canary.message(message)
-        }
-      end
-      
-      bot.send(:process_message, {:body => "Hello world"})
-    end
     
     it "should provide a command list" do
       canary = mock

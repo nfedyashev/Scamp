@@ -1,3 +1,23 @@
+require 'ostruct'
+
+class RoomRepository
+  @@rooms = []
+  def self.add_room(room)
+    puts "add room: #{room.inspect}"
+    @@rooms << room
+  end
+
+  def self.get(id_or_name)
+    if id_or_name.kind_of?(Integer)
+      @@rooms.detect { |e| e.id == id_or_name }
+    elsif id_or_name.kind_of?(String)
+      @@rooms.detect { |e| e.name == id_or_name }
+    else
+      raise 'unknown identifier type'
+    end
+  end
+end
+
 class Scamp
   module Rooms
     # TextMessage (regular chat message),
@@ -19,27 +39,27 @@ class Scamp
       }
     end
 
-    def room_id(room_id_or_name)
-      if room_id_or_name.is_a? Integer
-        return room_id_or_name
-      else
-        return room_id_from_room_name(room_id_or_name)
-      end
-    end
+    #def room_id(room_id_or_name)
+    #  if room_id_or_name.is_a? Integer
+    #    return room_id_or_name
+    #  else
+    #    return room_id_from_room_name(room_id_or_name)
+    #  end
+    #end
     
-    def room_name_for(room_id)
-      data = room_cache_data(room_id)
-      return data["name"] if data
-      room_id.to_s
-    end
+    #def room_name_for(room_id)
+    #  data = room_cache_data(room_id)
+    #  return data["name"] if data
+    #  room_id.to_s
+    #end
     
     private
     
-    def room_cache_data(room_id)
-      return room_cache[room_id] if room_cache.has_key? room_id
-      fetch_room_data(room_id)
-      return false
-    end
+    #def room_cache_data(room_id)
+    #  return room_cache[room_id] if room_cache.has_key? room_id
+    #  fetch_room_data(room_id)
+    #  return false
+    #end
     
     def populate_room_list
       url = "https://#{subdomain}.campfirenow.com/rooms.json"
@@ -70,8 +90,10 @@ class Scamp
       http.callback {
         if http.response_header.status == 200
           logger.debug "Fetched room data for #{room_id}"
-          room = Yajl::Parser.parse(http.response)['room']
-          room_cache[room["id"]] = room
+          room_name = Yajl::Parser.parse(http.response)['room']
+          #room_cache[room["id"]] = room
+
+          RoomRepository.add_room(Room.new(id: room_id, name: room_name))
 
           room['users'].each do |u|
             update_user_cache_with(u["id"], u)
@@ -82,29 +104,29 @@ class Scamp
       }
     end
     
-    def join_and_stream(id)
-      join(id) do
-        logger.info "Joined room #{id} successfully"
-        fetch_room_data(id)
-        stream(id)
+    def join_and_stream(room)
+      join(room.id) do
+        logger.info "Joined room #{room.name}(#{room.id}) successfully"
+        fetch_room_data(room.id)
+        stream(room)
       end
     end
     
-    def stream(room_id)
+    def stream(room)
       json_parser = Yajl::Parser.new :symbolize_keys => true
       json_parser.on_parse_complete = method(:process_message)
       
-      url = "https://streaming.campfirenow.com/room/#{room_id}/live.json"
+      url = "https://streaming.campfirenow.com/room/#{room.id}/live.json"
       # Timeout per https://github.com/igrigorik/em-http-request/wiki/Redirects-and-Timeouts
       http = EventMachine::HttpRequest.new(url, :connect_timeout => 20, :inactivity_timeout => 0).get :head => {'authorization' => [api_key, 'X']}
-      http.errback { logger.error "Couldn't stream room #{room_id} at url #{url}" }
-      http.callback { logger.info "Disconnected from #{url}"; rooms_to_join << room_id}
+      http.errback { logger.error "Couldn't stream room #{room.id} at url #{url}" }
+      http.callback { logger.info "Disconnected from #{url}"; rooms_to_join << room}
       http.stream {|chunk| json_parser << chunk }
     end
 
-    def room_id_from_room_name(room_name)
-      logger.debug "Looking for room id for #{room_name}"
-      rooms[room_name]["id"]
-    end
+    #def room_id_from_room_name(room_name)
+    #  logger.debug "Looking for room id for #{room_name}"
+    #  rooms[room_name]["id"]
+    #end
   end
 end

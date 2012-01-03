@@ -5,11 +5,16 @@ require "logger"
 
 require "scamp/version"
 require 'scamp/connection'
+require 'scamp/room'
 require 'scamp/rooms'
+require 'scamp/user'
 require 'scamp/users'
-require 'scamp/matcher'
+require 'scamp/expectation'
 require 'scamp/action'
+require 'scamp/message'
 require 'scamp/messages'
+
+require 'pry'
 
 class Scamp
   include Connection
@@ -17,7 +22,7 @@ class Scamp
   include Users
   include Messages
 
-  attr_accessor :rooms, :user_cache, :room_cache, :matchers, :api_key, :subdomain,
+  attr_accessor :rooms, :user_cache, :room_cache, :expectations, :api_key, :subdomain,
                 :logger, :verbose, :first_match_only, :ignore_self, :required_prefix,
                 :rooms_to_join
 
@@ -39,7 +44,7 @@ class Scamp
     @rooms = {}
     @user_cache = {}
     @room_cache = {}
-    @matchers ||= []
+    @expectations ||= []
   end
   
   def behaviour &block
@@ -51,14 +56,14 @@ class Scamp
     connect(api_key, room_list, &blk)
   end
   
-  def command_list
-    matchers.map{|m| [m.trigger, m.conditions] }
-  end
+  #def command_list
+  #  matchers.map{|m| [m.trigger, m.conditions] }
+  #end
 
   def logger
     unless @logger
       @logger = Logger.new(STDOUT)
-      @logger.level = (verbose ? Logger::DEBUG : Logger::INFO)
+      @logger.level = Logger::DEBUG
     end
     @logger
   end
@@ -75,16 +80,20 @@ class Scamp
 
   private
 
-  def match trigger, params={}, &block
-    params ||= {}
-    matchers << Matcher.new(self, {:trigger => trigger, :action => block, :conditions => params[:conditions], :required_prefix => required_prefix})
+  def match(expectation, params={}, &block)
+    expectations << Expectation.new(expectation, {:action => block, :conditions => params[:conditions], :required_prefix => required_prefix})
   end
+
+
   
   def process_message(msg)
     logger.debug "Received message #{msg.inspect}"
-    return false if ignore_self && is_me?(msg[:user_id])
-    matchers.each do |matcher|
-      break if first_match_only & matcher.attempt(msg)
+    message = Message.new(msg)
+
+    #return false if ignore_self && is_me?(msg[:user_id])
+    expectations.each do |expectation|
+      #break if first_match_only & matcher.attempt(msg)
+      expectation.check(message)
     end
   end
 end

@@ -7,14 +7,14 @@ class Scamp
         
         # Check for rooms to join, and join them
         EventMachine::add_periodic_timer(5) do
-          while id = @rooms_to_join.pop
-            join_and_stream(id)
+          while room = @rooms_to_join.pop
+            join_and_stream(room)
           end
         end
         
         populate_room_list do
           logger.debug "Adding #{room_list.join ', '} to list of rooms to join"
-          @rooms_to_join = room_list.map{|c| room_id(c) }
+          @rooms_to_join = room_list.map{ |c| RoomRepository.get(c) }
 
           # Call a post connection block
           if block_given?

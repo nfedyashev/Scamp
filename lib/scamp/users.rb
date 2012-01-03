@@ -1,3 +1,25 @@
+require 'ostruct'
+
+class UserRepository
+  @@users = []
+  def self.add_user(user)
+    puts "add user: #{user.inspect}"
+    @@users << user
+  end
+
+  def self.get(id_or_name)
+    if id_or_name.kind_of?(Integer)
+      @@users.detect { |e| e.id == id_or_name }
+    elsif id_or_name.kind_of?(String)
+      @@users.detect { |e| e.name == id_or_name }
+    else
+      raise 'unknown identifier type'
+    end
+  end
+end
+
+
+
 class Scamp
   module Users
     # Return the user_id if we haven't got the real name and

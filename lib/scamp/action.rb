@@ -9,10 +9,10 @@
 class Scamp
   class Action
     
-    attr_accessor :matches, :bot
+    attr_accessor :matches
     
-    def initialize(bot, action, message)
-      @bot = bot
+    def initialize(action, message)
+      #@bot = bot
       @action = action
       @message = message
     end
@@ -28,32 +28,34 @@ class Scamp
     end
     
     def room_id
-      @message[:room_id]
+      @message.room.id
     end
     
+    #FIXME - must be room_name to keep it consisten
     def room
-      bot.room_name_for @message[:room_id]
+      @message.room.name
     end
     
     def user
-      bot.username_for(@message[:user_id])
+      @message.user.name
     end
     
+    #FIXME - must be room_name to keep it consisten
     def user_id
-      @message[:user_id]
+      @message.user.id
     end
     
     def message
-      @message[:body]
+      @message.body
     end
     
     def run
       self.instance_eval &@action
     end
     
-    def command_list
-      bot.command_list
-    end
+    #def command_list
+    #  bot.command_list
+    #end
     
     def say(msg, room_id_or_name = room_id)
       bot.say(msg, room_id_or_name)
