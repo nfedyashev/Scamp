@@ -45,6 +45,8 @@ class Scamp
           logger = Logger.new(ENV['SCAMP_LOGGING'] ? STDOUT : nil)
           logger.level = Logger::DEBUG
           @logger = logger
+
+          @logger = ::Tinder.logger = logger
         end
         @logger
       end

@@ -15,12 +15,10 @@ class Scamp
       @message = message
     end
 
-    #TODO - must be user_name to keep it consisten
     def user
       @message.user.name
     end
 
-    #TODO - must be room_name to keep it consisten
     def room
       @message.room.name
     end
