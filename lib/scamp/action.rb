@@ -3,9 +3,6 @@
 # This allows us to make room, user etc. methods
 # available on a per-message basis
 #
-
-# {:room_id=>401839, :created_at=>"2011/09/10 00:23:19 +0000", :body=>"something", :id=>408089344, :user_id=>774016, :type=>"TextMessage"}
-
 class Scamp
   class Action
     attr_accessor :matches
@@ -18,6 +15,46 @@ class Scamp
       @message = message
     end
 
+    #TODO - must be user_name to keep it consisten
+    def user
+      @message.user.name
+    end
+
+    #TODO - must be room_name to keep it consisten
+    def room
+      @message.room.name
+    end
+
+    def say(msg, room_in_loose_format = nil)
+      r = post_to_room(room_in_loose_format)
+      if r.present?
+        r.say(msg)
+      else
+        ::Scamp.logger.warn "Can't post to room #{room_in_loose_format}"
+      end
+    end
+
+    def play(sound, room_in_loose_format = nil)
+      r = post_to_room(room_in_loose_format)
+      if r.present?
+        r.play(sound)
+      else
+        ::Scamp.logger.warn "Can't post to room #{room_in_loose_format}"
+      end
+    end
+
+    def room_id
+      @message.room.id
+    end
+
+    def user_id
+      @message.user.id
+    end
+
+    def message
+      @message.body
+    end
+
     def matches=(match)
       @matches = match[1..-1]
       match.names.each do |name|
@@ -28,28 +65,6 @@ class Scamp
       end if match.respond_to?(:names) # 1.8 doesn't support named captures
     end
 
-    def room_id
-      @message.room.id
-    end
-
-    #TODO - must be room_name to keep it consisten
-    def room
-      @message.room.name
-    end
-
-    def user
-      @message.user.name
-    end
-
-    #TODO - must be room_name to keep it consisten
-    def user_id
-      @message.user.id
-    end
-
-    def message
-      @message.body
-    end
-
     def run
       self.instance_eval &@action
     end
@@ -58,14 +73,16 @@ class Scamp
     #  bot.command_list
     #end
 
-    #def say(msg, room_id_or_name = room_id)
-    def say(msg, _ = {})
-      @message.room.say(msg)
-    end
+    private
 
-    #def play(sound, room_id_or_name = room_id)
-    def play(sound, _ = {})
-      @message.room.play(sound)
+    def post_to_room(room_in_loose_format)
+      if room_in_loose_format.present?
+        if tinder_room = Room.get_tinder_room_by_id_or_name(room_in_loose_format)
+          ::Repository[Room].search(tinder_room.id).first
+        end
+      else
+        @message.room
+      end
     end
   end
 end

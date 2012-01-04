@@ -31,15 +31,16 @@ class Scamp
 
   def process_message
     @process_message ||= lambda do |msg|
-      #TODO - explain type check
-      break unless msg['type'] == 'TextMessage'
+      # type could be: TimestampMessage(with empty body), PasteMessage, SoundMessage, TweetMessage 
+      if msg['type'] == 'TextMessage'
+        room = ::Repository[Room].search(msg.room_id).first
+        logger.debug "[#{room.name.upcase}] Received message from #{msg.user.name}: \"#{msg.body}\""
 
-      logger.debug "Received message #{msg.inspect}"
+        @expectations.each do |expectation|
+          expectation.check(Message.make(msg))
 
-      @expectations.each do |expectation|
-        expectation.check(Message.make(msg))
-
-        break if ::Scamp::first_match_only
+          return if ::Scamp::first_match_only
+        end
       end
     end
   end

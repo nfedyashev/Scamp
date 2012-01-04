@@ -4,6 +4,7 @@ class Scamp
   cattr_accessor :first_match_only
   cattr_accessor :required_prefix
 
+  cattr_accessor :tinder_campfire
   cattr_accessor :verbose
 
   module Configurable
@@ -14,7 +15,7 @@ class Scamp
 
     module InstanceMethods
       def configure(options)
-        raise ArgumentError, "You must pass an API key" unless options[:api_key]
+        raise ArgumentError, "You must pass an API key"  unless options[:api_key]
         raise ArgumentError, "You must pass a subdomain" unless options[:subdomain]
 
         self.class.api_key          = options[:api_key]

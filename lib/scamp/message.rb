@@ -8,10 +8,10 @@ class Scamp
       super(hash)
     end
 
-    def self.make(hash)
-      room = Repository[Room].search(hash['room_id']).first
+    def self.make(tinder_message)
+      room = Repository[Room].search(tinder_message['room_id']).first
 
-      Scamp::Message.new(:user => User.find_or_create(hash), :room => room, :body => hash['body'])
+      Scamp::Message.new(:user => User.find_or_create(tinder_message), :room => room, :body => tinder_message['body'])
     end
   end
 end

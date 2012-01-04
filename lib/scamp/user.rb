@@ -9,12 +9,12 @@ class Scamp
       super(hash)
     end
 
-    def self.find_or_create(hash)
-      if user = Repository[User].search(hash['user_id']).first
+    def self.find_or_create(tinder_message)
+      if user = Repository[User].search(tinder_message.user.id).first
         return user
       else
         #FIXME - check name format
-        user = User.new(id: hash['user_id'], name: hash['name'])
+        user = User.new(id: tinder_message.user.id, name: tinder_message.user.name)
         Repository[User].store(user)
         user
       end
