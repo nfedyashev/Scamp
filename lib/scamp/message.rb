@@ -3,7 +3,6 @@ require 'ostruct'
 class Scamp
   class Message < OpenStruct
     def initialize(hash)
-      puts hash.inspect
       raise ':user is not set' unless hash.keys.include?(:user)
       raise ':room is not set' unless hash.keys.include?(:room)
       raise ':body is not set' unless hash.keys.include?(:body)
@@ -12,7 +11,7 @@ class Scamp
     end
 
     def self.make(hash)
-      Scamp::Message.new(:user => UserRepository.get(hash[:user_id]), :room => RoomRepository.get(hash[:room_id]), :body => hash[:body])
+      Scamp::Message.new(:user => User.find_or_create(hash), :room => Repository[Room].search(hash['room_id']).first, :body => hash['body'])
     end
   end
 end

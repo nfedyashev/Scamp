@@ -1,3 +1,4 @@
+
 class Scamp
   module Connectable
     def self.included(base)
@@ -5,38 +6,34 @@ class Scamp
     end
 
     module InstanceMethods
-      def connect!(room_list, &blk)
-        logger.info "Starting up"
-        connect(room_list, &blk)
-      end
+      def connect!(rooms, &blk)
+        #logger.info "Starting up"
+        puts "Starting up"
 
-      private
+        campfire = ::Tinder::Campfire.new 'nfedyashev', :token => 'ed198ff06013829a4a2b870e057993486dee41e3'
 
-      def connect(room_list, &blk)
-        EventMachine.run do
+        user = User.make(campfire.me)
+        Repository[User].store(user)
+        User.me = user
 
-          # Check for rooms to join, and join them
-          EventMachine::add_periodic_timer(5) do
-            while room = @rooms_to_join.pop
-              ::Scamp::Rooms.join_and_stream(room)
-            end
+        tinder_rooms = []
+
+        rooms.each do |room|
+          if room.kind_of?(Integer)
+            tinder_room = campfire.find_room_by_id(room)
+          else
+            tinder_room = campfire.find_room_by_name(room)
           end
+          tinder_rooms << tinder_room
 
-          populate_room_list do
-            logger.debug "Adding #{room_list.join ', '} to list of rooms to join"
-            @rooms_to_join = room_list.map{ |c| RoomRepository.get(c) }
-
-            # Call a post connection block
-            if block_given?
-              yield
-            end
-          end
-
-          # populate bot data separately, in case we are ignoring ourselves
-          UserRepository.fetch_user_data('me')
+          Repository[Room].store(Room.new(id: tinder_room.id, name: tinder_room.name, tinder_room: tinder_room))
         end
-      end
 
+        tinder_rooms.each do |room|
+          room.listen &process_message
+        end
+
+      end
     end
   end
 

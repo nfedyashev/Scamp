@@ -12,8 +12,8 @@ class Scamp
     attr_accessor :matches
 
     def initialize(action, message)
-      @action  = action
-      @message = message
+      @action      = action
+      @message     = message
     end
 
     def matches=(match)
@@ -58,17 +58,17 @@ class Scamp
 
     #def say(msg, room_id_or_name = room_id)
     def say(msg, _ = {})
-      ::Scamp::API.say(msg, @message.room)
+      @message.room.say(msg)
     end
 
     #def paste(msg, room_id_or_name = room_id)
     def paste(msg, _ = {})
-      ::Scamp::API.paste(msg, @message.room)
+      @message.room.paste(msg)
     end
 
     #def play(sound, room_id_or_name = room_id)
     def play(sound, _ = {})
-      ::Scamp::API.play(sound, @message.room)
+      @message.room.play(sound)
     end
   end
 end

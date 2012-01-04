@@ -30,7 +30,7 @@ class Scamp
     private
 
     def ignore_self_message?(message)
-      ignore_self && message.user == UserRepository.get('me')
+      ignore_self && message.user == User.me
     end
 
     def conditions_match?(message)
@@ -40,15 +40,15 @@ class Scamp
         case key 
         when :room, :rooms
           if expectation.is_a? Array
-            expectation.collect{ |c| RoomRepository.get(c) }.include?(message.room)
+            expectation.collect{ |exp| Room.get_by_id_or_name(exp) }.include?(message.room)
           else
-            message.room == RoomRepository.get(expectation)
+            message.room == Room.get_by_id_or_name(expectation)
           end
         when :user, :users
           if expectation.is_a? Array
-            expectation.collect{ |c| UserRepository.get(c) }.include?(message.user)
+            expectation.collect{ |c| User.get_by_id_or_name(exp) }.include?(message.user)
           else
-            message.user == UserRepository.get(expectation)
+            message.user == User.get_by_id_or_name(expectation)
           end
         end
       end

@@ -1,17 +1,14 @@
 class Scamp
-  class << self
-    attr_accessor :subdomain
-    attr_accessor :api_key
-    attr_accessor :first_match_only
+  cattr_accessor :subdomain
+  cattr_accessor :api_key
+  cattr_accessor :first_match_only
 
-    attr_accessor :verbose
-    attr_accessor :logger
-  end
+  cattr_accessor :verbose
+  cattr_accessor :logger
 
   module Configurable
     def self.included(base)
       base.send :include, InstanceMethods
-      base.extend ClassMethods
     end
 
     module InstanceMethods
@@ -38,8 +35,6 @@ class Scamp
           end
         end
       end
-    end
-    module ClassMethods
     end
   end
 end
