@@ -124,12 +124,16 @@ even though you called say
     say "Only said if room name matches 'Some Room'"
   end
   
-  match "some text", :conditions => {:user => "Some User"} do
+  match "some text", :conditions => {:user => ["Some User"]} do
     say "Only said if user name matches 'Some User'"
   end
   
   match /some other text/, :conditions => {:user => "Some User", :room => 123456} do
     say "You can mix conditions"
+  end
+
+  match /some other text/, :conditions => {:users => ["Some User", "Some Other User"]} do
+    say "You can list multiple users"
   end
 
   match "some text", :conditions => {:room => ["Some Room", "Some Other Room"]} do
@@ -208,7 +212,8 @@ Scamp will now require commands to begin with 'Bot: ' (or whatever you have spec
 
 ## TODO
 
-	* Allow multiple values for conditions, eg: :conditions => {:user => ["Some User", "Some Other User"]}
+ * Allow paste support
+
 
 ## How to contribute
 

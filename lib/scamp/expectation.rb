@@ -8,7 +8,6 @@ class Scamp
       params ||= {}
       params[:conditions] ||= {}
       params.each do |k,v|
-        puts("#{k}=", v)
         send("#{k}=", v)
       end
     end
@@ -35,8 +34,7 @@ class Scamp
 
     def conditions_match?(message)
       conditions.all? do |key, expectation|
-        puts "Checking #{key} against #{expectation}"
-        #bot.logger.debug "msg is #{msg.inspect}"
+        ::Scamp.logger.debug "Checking #{key} against #{expectation}; message: #{message}"
         case key 
         when :room, :rooms
           if expectation.is_a? Array
@@ -56,17 +54,18 @@ class Scamp
 
     def message_body_match?(message)
       if message && required_prefix 
-        #FIXME - remove side effect
+        #TODO - remove side effect
         message.body = handle_prefix(message)
         return false unless message.body
       end
+
       if value.is_a? String
         return true if message.body == value
       elsif value.is_a? Regexp
-        #FIXME - remove side effect
+        #TODO - remove side effect
         return self.matches = message.body.match(value)
       else
-        #bot.logger.warn "Don't know what to do with #{trigger.inspect} at #{__FILE__}:#{__LINE__}"
+        ::Scamp.logger.warn "Don't know what to do with #{trigger.inspect} at #{__FILE__}:#{__LINE__}"
       end
       false
     end

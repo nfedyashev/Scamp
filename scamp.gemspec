@@ -16,9 +16,8 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
   
-  s.add_dependency('eventmachine', '~> 1.0.0.beta.4')
-  s.add_dependency('yajl-ruby', '~> 0.8.3')
-  s.add_dependency('em-http-request', '~> 1.0.0.beta.4')
+  s.add_dependency('tinder', '~> 1.8.0')
+  s.add_dependency('repository', '~> 0.0.1')
 
   s.add_development_dependency "rake", "~> 0.9.2"
   s.add_development_dependency "pry"

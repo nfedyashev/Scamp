@@ -1,4 +1,3 @@
-
 class Scamp
   module Connectable
     def self.included(base)
@@ -6,33 +5,39 @@ class Scamp
     end
 
     module InstanceMethods
-      def connect!(rooms, &blk)
-        #logger.info "Starting up"
-        puts "Starting up"
+      def connect!(rooms_in_loose_format, &blk)
+        logger.info "Starting up"
 
-        campfire = ::Tinder::Campfire.new 'nfedyashev', :token => 'ed198ff06013829a4a2b870e057993486dee41e3'
+        campfire = ::Tinder::Campfire.new ::Scamp.subdomain, :token => ::Scamp.subdomain
 
+        join(campfire)
+
+        prepared_tinder_rooms(rooms_in_loose_format, campfire).each do |room|
+          room.listen &process_message
+        end
+      end
+
+      private
+
+      def join(campfire)
         user = User.make(campfire.me)
         Repository[User].store(user)
         User.me = user
+      end
 
+      def prepared_tinder_rooms(rooms, campfire)
         tinder_rooms = []
 
-        rooms.each do |room|
+        rooms.collect do |room|
           if room.kind_of?(Integer)
             tinder_room = campfire.find_room_by_id(room)
           else
             tinder_room = campfire.find_room_by_name(room)
           end
-          tinder_rooms << tinder_room
-
           Repository[Room].store(Room.new(id: tinder_room.id, name: tinder_room.name, tinder_room: tinder_room))
-        end
 
-        tinder_rooms.each do |room|
-          room.listen &process_message
+          tinder_rooms
         end
-
       end
     end
   end

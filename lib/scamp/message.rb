@@ -1,5 +1,3 @@
-require 'ostruct'
-
 class Scamp
   class Message < OpenStruct
     def initialize(hash)
@@ -11,7 +9,9 @@ class Scamp
     end
 
     def self.make(hash)
-      Scamp::Message.new(:user => User.find_or_create(hash), :room => Repository[Room].search(hash['room_id']).first, :body => hash['body'])
+      room = Repository[Room].search(hash['room_id']).first
+
+      Scamp::Message.new(:user => User.find_or_create(hash), :room => room, :body => hash['body'])
     end
   end
 end

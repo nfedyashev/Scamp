@@ -8,12 +8,14 @@
 
 class Scamp
   class Action
-
     attr_accessor :matches
 
     def initialize(action, message)
-      @action      = action
-      @message     = message
+      raise "missing lambda action" unless action.class  == Proc
+      raise "invalid message type"  unless message.class == Message
+
+      @action  = action
+      @message = message
     end
 
     def matches=(match)
@@ -30,7 +32,7 @@ class Scamp
       @message.room.id
     end
 
-    #FIXME - must be room_name to keep it consisten
+    #TODO - must be room_name to keep it consisten
     def room
       @message.room.name
     end
@@ -39,7 +41,7 @@ class Scamp
       @message.user.name
     end
 
-    #FIXME - must be room_name to keep it consisten
+    #TODO - must be room_name to keep it consisten
     def user_id
       @message.user.id
     end
@@ -59,11 +61,6 @@ class Scamp
     #def say(msg, room_id_or_name = room_id)
     def say(msg, _ = {})
       @message.room.say(msg)
-    end
-
-    #def paste(msg, room_id_or_name = room_id)
-    def paste(msg, _ = {})
-      @message.room.paste(msg)
     end
 
     #def play(sound, room_id_or_name = room_id)
